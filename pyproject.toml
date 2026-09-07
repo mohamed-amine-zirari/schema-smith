@@ -1,0 +1,24 @@
+[project]
+name = "1-project-csv-whisper"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "mohamed amine zirari", email = "aminezirari3002@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "argparse==1.4.0",
+    "numpy==2.5.2",
+    "pandas==3.0.5",
+    "pip==26.1.2",
+    "python-dateutil==2.9.0.post0",
+    "six==1.17.0",
+]
+
+[project.scripts]
+1-project-csv-whisper = "1_project_csv_whisper:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
