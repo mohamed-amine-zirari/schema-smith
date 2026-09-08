@@ -1,4 +1,4 @@
-Employee_ID,First_Name,Last_Name,Age,Department_Region,Status,Join_Date,Salary,Email,Phone,Performance_Score,Remote_Work
+ Employee_ID ,First__Name,LaAt_Name,A#ge,Department_Region,STatus,Join_Date,Salary,Email,^,Performance_Score,Remote_Work,First__Name ,FIrst__Name,First__Name
 EMP1000,Bob,Davis,25,DevOps-California,Active,4/2/2021,59767.65,bob.davis@example.com,-1651623197,Average,TRUE
 EMP1001,Bob,Brown,,Finance-Texas,Active,7/10/2020,65304.66,bob.brown@example.com,-1898471390,Excellent,TRUE
 EMP1002,Alice,Jones,,Admin-Nevada,Pending,12/7/2023,88145.9,alice.jones@example.com,-5596363211,Good,TRUE
