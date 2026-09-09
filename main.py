@@ -17,7 +17,6 @@ def main():
     args = parser.parse_args()
 
     ##### load csv file #####
-
     def load_csv_file(file_name):
         try :
             dirty_df = pd.read_csv(f"dirty_data/{file_name}",header=None)
@@ -41,7 +40,6 @@ def main():
     
 
     ##### cleaning clolumn names #####
-
     def clean_column_names(df) :
         print(f"befor the cleaning {df.columns}")
         clean_columns = []
@@ -70,8 +68,14 @@ def main():
         # print(f"after the cleaning {dirty_df.columns}")
         return df
     clean_column_names_df = clean_column_names(df=dirty_df)
-    print(f"after the cleaning{clean_column_names_df.columns}")
-    print(clean_column_names_df.head())
+    # print(f"after the cleaning{clean_column_names_df.columns}")
+    # print(clean_column_names_df.head())
+
+    def handle_missing_values(df):
+        
+        print(f"missing values for each column :\n{df.isna().sum()}")
+        
+    handle_missing_values(df = clean_column_names_df)
 
     ##### timer stops #####
     end_ = time.perf_counter()
