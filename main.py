@@ -1,5 +1,7 @@
-import pandas as pd 
+import pandas as pd  # noqa: I001
 import argparse , time ,re
+import numpy as np
+
 ##### data #####
 
 #Messy_Employee_dataset.csv
@@ -68,14 +70,42 @@ def main():
         # print(f"after the cleaning {dirty_df.columns}")
         return df
     clean_column_names_df = clean_column_names(df=dirty_df)
-    # print(f"after the cleaning{clean_column_names_df.columns}")
-    # print(clean_column_names_df.head())
+    print(f"after the cleaning{clean_column_names_df.columns}")
+    print(clean_column_names_df.head())
 
     def handle_missing_values(df):
+        numeric_count = 0
+        non_numeric_count = 0
+        count_per_column ={}
         
+        df = df.replace(["N/A", "NA", "null", "None", "", "-"], np.nan)
         print(f"missing values for each column :\n{df.isna().sum()}")
         
-    handle_missing_values(df = clean_column_names_df)
+        
+        for col in df.columns :
+            if pd.api.types.is_numeric_dtype(df[col]) :
+                median_ = df[col].median()
+                v1 = df[col].isna().sum()
+                numeric_count += v1
+                count_per_column[col] = v1
+                df.fillna( {col:median_} ,inplace = True)
+                
+            else :
+                v2 = df[col].isna().sum()
+                non_numeric_count += v2
+                count_per_column[col]=v2
+                df.fillna({col:"unknown"},inplace = True)
+                
+
+
+            
+        total = numeric_count+non_numeric_count
+        print(numeric_count , non_numeric_count , count_per_column , f"total : {total}" )
+        return df , count_per_column
+        
+    clean_df, missing_counts = handle_missing_values(df=clean_column_names_df)
+    
+    print(clean_df.head(5))
 
     ##### timer stops #####
     end_ = time.perf_counter()
