@@ -78,9 +78,8 @@ def main():
         non_numeric_count = 0
         count_per_column ={}
         
-        df = df.replace(["N/A", "NA", "null", "None", "", "-"], np.nan)
+        df = df.replace(["N/A", "NA", "null", "None", "", "-","n/a", "#", "?", "--"], np.nan)
         print(f"missing values for each column :\n{df.isna().sum()}")
-        
         
         for col in df.columns :
             if pd.api.types.is_numeric_dtype(df[col]) :
@@ -88,23 +87,25 @@ def main():
                 v1 = df[col].isna().sum()
                 numeric_count += v1
                 count_per_column[col] = v1
-                df.fillna( {col:median_} ,inplace = True)
+                df[col] = df[col].fillna(median_)
                 
             else :
                 v2 = df[col].isna().sum()
                 non_numeric_count += v2
                 count_per_column[col]=v2
-                df.fillna({col:"unknown"},inplace = True)
-                
-
-
-            
-        total = numeric_count+non_numeric_count
-        print(numeric_count , non_numeric_count , count_per_column , f"total : {total}" )
-        return df , count_per_column
+                df[col] = df[col].fillna("unknown")
         
-    clean_df, missing_counts = handle_missing_values(df=clean_column_names_df)
-    
+        total = numeric_count+non_numeric_count
+        missing_metrics = {"count_per_column" :count_per_column ,
+                           "non_numeric_count" : non_numeric_count ,
+                           "numeric_count" : numeric_count ,
+                           "total" : total
+                           }
+        
+        return df , missing_metrics
+        
+    clean_df, missing_metrics = handle_missing_values(df=clean_column_names_df)  # noqa: RUF059
+
     print(clean_df.head(5))
 
     ##### timer stops #####
