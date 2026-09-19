@@ -1,6 +1,7 @@
 import pandas as pd  # noqa: I001
 import argparse , time ,re
 import numpy as np
+from sklearn.ensemble import IsolationForest
 
 ##### data #####
 
@@ -33,12 +34,14 @@ def main():
             print("Wrong delimiter (e.g., commas vs. semicolons),mismatched quotes, or a row has more columns than the header.")
             
         else :
+            
             dirty_df.columns = dirty_df.iloc[0]
             dirty_df = dirty_df.iloc[1:]
+            
             print(f"-number of rows and columns :{dirty_df.shape} \n-first 5 rows :\n{dirty_df.head()} \ncolumns types :\n{dirty_df.dtypes}\n{dirty_df.describe()}")
             
             return dirty_df 
-    dirty_df = load_csv_file(args.file)
+    dirty_df  = load_csv_file(args.file)
     
 
     ##### cleaning clolumn names #####
@@ -70,16 +73,178 @@ def main():
         # print(f"after the cleaning {dirty_df.columns}")
         return df
     clean_column_names_df = clean_column_names(df=dirty_df)
-    print(f"after the cleaning{clean_column_names_df.columns}")
-    print(clean_column_names_df.head())
+    # print(f"after the cleaning{clean_column_names_df.columns}")
+    # print(clean_column_names_df.head())
+    # print(clean_column_names_df.dtypes)
+
+
+    def normalisation(df):
+        df = df.replace(["N/A", "NA", "null", "None", "", "-","n/a", "#", "?", "--"], np.nan)
+        print(f"missing values for each column :\n{df.isna().sum()}")
+        return df
+    normalised_df = normalisation(df=clean_column_names_df)
+
+    def Convert_Types(df):
+
+        for col in df.columns:
+
+            print(f"\n{col} : {df[col].dtype}")
+
+            # Remember values that were already missing
+            missing_before = df[col].isna()
+
+            # ==================================================
+            # 1. Try BOOLEAN
+            # ==================================================
+
+            boolean_values = {
+                "true": True,
+                "false": False,
+                "yes": True,
+                "no": False,
+            }
+
+            converted_boolean = (
+                df[col]
+                .astype(str)
+                .str.lower()
+                .map(boolean_values)
+            )
+
+            boolean_failed = (
+                converted_boolean.isna() & ~missing_before
+            )
+
+            number_failed = boolean_failed.sum()
+
+            number_tested = (~missing_before).sum()
+
+            if number_tested > 0:
+                success_rate = (
+                    number_tested - number_failed
+                ) / number_tested
+            else:
+                success_rate = 0
+
+            if success_rate >= 0.95:
+                df[col] = converted_boolean
+                print("→ detected as boolean")
+                continue
+
+            # ==================================================
+            # 2. Try NUMERIC
+            # ==================================================
+
+            converted_numeric = pd.to_numeric(
+                df[col],
+                errors="coerce"
+            )
+
+            missing_after = converted_numeric.isna()
+
+            conversion_failed = missing_after & ~missing_before
+
+            number_failed = conversion_failed.sum()
+
+            if number_tested > 0:
+                success_rate = (
+                    number_tested - number_failed
+                ) / number_tested
+            else:
+                success_rate = 0
+
+            if success_rate >= 0.95:
+
+                # Check if all numeric values are whole numbers
+                if (converted_numeric.dropna() % 1 == 0).all():
+                    df[col] = converted_numeric.astype("Int64")
+                    print("→ detected as integer")
+                else:
+                    df[col] = converted_numeric.astype("Float64")
+                    print("→ detected as float")
+
+                continue
+
+            # ==================================================
+            # 3. Try DATETIME (only if values look date-like)
+            # ==================================================
+
+            sample = df[col].dropna().astype(str).head(20)
+            looks_like_date = sample.str.contains(r"[-/:]").mean() >= 0.5
+
+            if looks_like_date:
+
+                converted_datetime = pd.to_datetime(
+                    df[col],
+                    errors="coerce"
+                )
+
+                missing_after = converted_datetime.isna()
+
+                conversion_failed = missing_after & ~missing_before
+
+                number_failed = conversion_failed.sum()
+
+                if number_tested > 0:
+                    success_rate = (
+                        number_tested - number_failed
+                    ) / number_tested
+                else:
+                    success_rate = 0
+
+                if success_rate >= 0.95:
+                    df[col] = converted_datetime
+                    print("→ detected as datetime")
+                    continue
+
+            # ==================================================
+            # 4. Nothing matched
+            # ==================================================
+
+            print("→ keeping as string/object")
+
+        return df
+
+    col_converted_types = Convert_Types(df=normalised_df)
+    # print(col_converted_types.dtypes)
+
+
+    ##### Duplicate Detection & Removal (AFTER type conversion) #####
+
+    def Duplicate_Detection_Removal(df):
+        
+        number_duplicates_rows = df.duplicated().sum()
+        print(f"number is : {number_duplicates_rows}")
+        
+        
+        cleaned_total_numb_rows = df.shape[0]
+        percentage = (number_duplicates_rows / cleaned_total_numb_rows ) * 100
+        print(f"percentage :{round(percentage,2)}%")
+
+        n_rows_befor = df.shape[0]
+        print(f"number of rows and columns befor Duplicate_Detection_Removal :\n{n_rows_befor}")
+        cleaned_df = df.drop_duplicates(keep="first")
+        n_rows_after = cleaned_df.shape[0]
+        print(f"number of rows and columns after Duplicate_Detection_Removal :\n{n_rows_after}")
+        duplicate_metrics = {
+                                "duplicates_found": int(df.duplicated().sum()),
+                                "duplicates_percentage": float(round(percentage , 2)),
+                                "rows_before": int(n_rows_befor),
+                                "rows_after": int(n_rows_after),
+                            }
+        
+        return (cleaned_df,duplicate_metrics) 
+        
+    cleaned_from_dup_df, duplicate_metrics = Duplicate_Detection_Removal(df = col_converted_types )
+
+    # print( cleaned_from_dup_df, duplicate_metrics)
+
 
     def handle_missing_values(df):
         numeric_count = 0
         non_numeric_count = 0
         count_per_column ={}
         
-        df = df.replace(["N/A", "NA", "null", "None", "", "-","n/a", "#", "?", "--"], np.nan)
-        print(f"missing values for each column :\n{df.isna().sum()}")
         
         for col in df.columns :
             if pd.api.types.is_numeric_dtype(df[col]) :
@@ -104,9 +269,40 @@ def main():
         
         return df , missing_metrics
         
-    clean_df, missing_metrics = handle_missing_values(df=clean_column_names_df)  # noqa: RUF059
+    clean_df, missing_metrics = handle_missing_values(df=cleaned_from_dup_df)  # noqa: RUF059
+    print(clean_df.isna().sum())
 
-    print(clean_df.head(5))
+    ##### detect anomalies #####
+    def detect_anomalies(df, contamination) :
+        model = IsolationForest(contamination=contamination, random_state=42)
+        
+        only_num_col = df.select_dtypes(include="number")
+        copy_df = only_num_col.fillna(only_num_col.median())
+        
+        if only_num_col.empty :
+            print("warnning , there is no numeric columns ! ")
+            return df , {}
+        else :
+            print("data has numeric data")
+            copy_df = only_num_col.copy()
+            
+            prediction = model.fit_predict(copy_df)
+            anomalies = prediction == -1
+            anomalies_count = anomalies.sum()
+            
+            percentage = (anomalies_count / len(prediction) ) * 100
+            metrics = {
+                            "anomalies_found": int(anomalies.sum()),
+                            "anomaly_percentage": float(round(percentage , 2)),
+                            "contamination": float(contamination),
+                            "numeric_columns_used": list(copy_df.columns),
+                        }
+            df["isolaation_flag"] = anomalies
+            return df,metrics 
+
+    df_with_flag , metrics =detect_anomalies(df = clean_df , contamination=0.05)
+     
+    print(df_with_flag.head(5) , "\n" , metrics)
 
     ##### timer stops #####
     end_ = time.perf_counter()
@@ -114,7 +310,3 @@ def main():
 
 if __name__ == "__main__" :
     main()
-
-
-
-
