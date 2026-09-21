@@ -2,6 +2,8 @@ import pandas as pd  # noqa: I001
 import argparse , time ,re
 import numpy as np
 from sklearn.ensemble import IsolationForest
+from canonical_column_names import CANONICAL_FIELDS
+from sentence_transformers import SentenceTransformer
 
 ##### data #####
 
@@ -301,9 +303,65 @@ def main():
             return df,metrics 
 
     df_with_flag , metrics =detect_anomalies(df = clean_df , contamination=0.05)
-     
-    print(df_with_flag.head(5) , "\n" , metrics)
+    
 
+          
+    ##### build_embeddings #####
+    messy_columns = list(df_with_flag.columns)
+    canonical_column_names_ = CANONICAL_FIELDS
+    def build_embeddings(canonical_column_names ,messy_columns_):
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        messy_embeddings = model.encode(messy_columns_)
+        canonical_embeddings = model.encode(canonical_column_names)
+        print(messy_embeddings.shape)
+        print(canonical_embeddings.shape)
+        similarities = model.similarity(messy_embeddings , canonical_embeddings)
+        print(similarities)
+        return (model ,canonical_column_names ,canonical_embeddings)
+    model ,canonical_column_names,canonical_embeddings = build_embeddings(canonical_column_names =canonical_column_names_ ,messy_columns_ = messy_columns )
+
+    def preprocess_messy_column__name(name) : 
+        ABBREVIATIONS = {    
+                            "nm": "name",
+                            "dt": "date",
+                            "id": "identifier",
+                            "dob": "date of birth",
+                            "addr": "address",
+                            "tel": "telephone",
+                            "ph": "phone",
+                            "qty": "quantity",
+                            "amt": "amount",
+                            "num": "number",
+                            "no": "number",
+                            "dept": "department",
+                            "emp": "employee",
+                            "cust": "customer",
+                            "prod": "product",
+                        }
+        v1 = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
+        v2 = v1.replace("_"," ").replace("-"," ")
+        v3 = re.sub(r"\s+", " ", v2).lower()
+
+        if " " in v3 :
+            splited_v3 = v3.split()
+
+            for ab in ABBREVIATIONS :
+                for index , item in enumerate(splited_v3) :
+                    if ab == item :
+                        splited_v3[index] = ABBREVIATIONS[ab] 
+
+            v3 = " ".join(splited_v3)
+        else :
+            for ab in ABBREVIATIONS :
+                if ab == v3 :
+                    v3 = ABBREVIATIONS[ab] 
+        print(v3)          
+        return v3 
+    preprocess_messy_column__name("FirsNm")
+    
+            
+
+        
     ##### timer stops #####
     end_ = time.perf_counter()
     print(f"it takes {end_ - start_}s")
