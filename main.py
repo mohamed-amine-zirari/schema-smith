@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 from canonical_column_names import CANONICAL_FIELDS
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
 
 ##### data #####
 
@@ -318,7 +320,7 @@ def main():
         similarities = model.similarity(messy_embeddings , canonical_embeddings)
         print(similarities)
         return (model ,canonical_column_names ,canonical_embeddings)
-    model ,canonical_column_names,canonical_embeddings = build_embeddings(canonical_column_names =canonical_column_names_ ,messy_columns_ = messy_columns )
+    model_emb ,canonical_column_names_,canonical_embeddings_ = build_embeddings(canonical_column_names =canonical_column_names_ ,messy_columns_ = messy_columns )
 
     def preprocess_messy_column__name(name) : 
         ABBREVIATIONS = {    
@@ -357,7 +359,81 @@ def main():
                     v3 = ABBREVIATIONS[ab] 
         print(v3)          
         return v3 
-    preprocess_messy_column__name("FirsNm")
+    
+
+    def match_columns(df ,model, canonical_names , canonical_embd , threshold):
+        row_results = []
+        cols_to_match = [c for c in df.columns if c != "isolaation_flag"] #hena kan7iyed les columns likent zed o3arfthom dyalach 
+        for col in cols_to_match :
+            
+            pre_processed_col = preprocess_messy_column__name(col)
+            # bdel had algorihtem method b batch processing o9ra 3lih 
+            messy_col_emb_1D = model.encode(pre_processed_col) # ghadi t3tik ghy vector fih (384,) number  
+            messy_col_emb_2D= np.expand_dims(messy_col_emb_1D, axis=0)
+
+            
+            similarity_number = cosine_similarity(canonical_embd , messy_col_emb_2D)
+
+            print(f"similarity is : {similarity_number}")
+            # similarity is : [   [0.10335775]
+            #                     [0.76258785]
+            #                     [0.5800252 ]
+            #                     [0.21306303]
+            #                     [0.15669516]
+            #                     [0.17364316]
+            #                     [0.03854379]
+            #                     [0.06067825]
+            #                     [0.14743029]
+            #                     [0.02737785]
+            #                     [0.00870144] ]
+            #                     isolaation flag
+            #khasni ghi the best match , y3ni l max , onbiyen l colomn  messy , m3a chmen column canonical t matcha m3ah
+            the_best_score = float(np.clip(similarity_number.max(), 0.0, 1.0))# kent dair flowel float(similarity_number.max()) hit l9it problem ki3tini 1.0011 , y3ni fo9 1 
+            print(f"the best is : {col} {the_best_score}")
+            
+            #DABA 3NDI VALUE DYAL COLUMN CANONICAL , KHASNO SMIYA DYALO 
+            index = np.argmax(similarity_number) #bach njbed index 
+            matched_to = canonical_names[index]
+            print(f"the canonical column is : {matched_to}")
+            dic = { "raw column":col , 
+                    "matched_to" : matched_to , 
+                    "confidence" : the_best_score}
+            row_results.append(dic)
+        print(f"raw results :\n{row_results}")
+            
+        for dic in row_results :
+            confidence = dic["confidence"]
+            if confidence >= threshold :
+                dic["is_confident"] = True
+            else :
+                dic["is_confident"] = False
+        finale_result = row_results
+        print(len(finale_result))
+        confident_TRUE_count = 0
+        confident_FALSE_count = 0
+        total_confidence = 0
+        total = len(finale_result)
+        
+        for dic in finale_result :
+            if dic["is_confident"] == True :
+                confident_TRUE_count += 1
+            if dic["is_confident"] == False :
+                confident_FALSE_count += 1
+            total_confidence += dic["confidence"]
+        average_confidence = round(total_confidence / total, 3)
+
+        metrics = {"total_columns" : len(finale_result),
+                   "columns_mapped_confident" : confident_TRUE_count , 
+                   "columns_low_confidence" : confident_FALSE_count ,
+                   "average_confidence" : average_confidence}
+        # print(metrics)
+
+        # print(finale_result)
+        return (finale_result , metrics)
+
+            
+    finale_result ,match_metrics = match_columns(df = df_with_flag ,model = model_emb, canonical_names = canonical_column_names_ ,canonical_embd= canonical_embeddings_, threshold=0.75)
+    print(finale_result , "\n",match_metrics)
     
             
 
