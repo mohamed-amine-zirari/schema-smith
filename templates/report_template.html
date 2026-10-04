@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SchemaSmith — Data Report</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #222;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 35px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            margin-top: 40px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        h3 {
+            margin-top: 25px;
+        }
+
+        .header-info {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .header-info p {
+            margin: 6px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f2f5;
+        }
+
+        .metric {
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .green {
+            background-color: #d9f7df;
+            color: #16752d;
+        }
+
+        .yellow {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .red {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+
+        .success {
+            color: #16752d;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #856404;
+            font-weight: bold;
+        }
+
+        .muted {
+            color: #777;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            background-color: #f5f7fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .summary-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .headline {
+            border-left: 5px solid #333;
+            padding-left: 15px;
+        }
+
+        .review-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff8e1;
+            border-left: 4px solid #d99a00;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 800px) {
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- ===================================================== -->
+    <!-- 1. HEADER -->
+    <!-- ===================================================== -->
+
+    <header>
+
+        <h1>SchemaSmith — Data Report</h1>
+
+        <div class="header-info">
+
+            <p>
+                <strong>Input file:</strong>
+                {{ input_file }}
+            </p>
+
+            <p>
+                <strong>Run date/time:</strong>
+                {{ run_time }}
+            </p>
+
+            <p>
+                <strong>Total processing time:</strong>
+                {{ total_time }}s
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- ===================================================== -->
+    <!-- 2. OVERVIEW -->
+    <!-- ===================================================== -->
+
+    <section>
+
+        <h2>2. Overview</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Rows processed</td>
+                    <td>{{ rows }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Columns processed</td>
+                    <td>{{ columns }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Processing time</td>
+                    <td>{{ total_time }}s</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+
+    <!-- ===================================================== -->
+    <!-- 3. COLUMN CLEANING -->
+    <!-- ===================================================== -->
+
+    <section>
+
+        <h2>3. Column Cleaning</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Renames applied</td>
+                    <td>{{ rename_metrics.renames_applied }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Skipped collisions</td>
+                    <td>{{ rename_metrics.renames_skipped_collision }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Already correct</td>
+                    <td>{{ rename_metrics.already_correct }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Columns left unmapped</td>
+                    <td>{{ rename_metrics.columns_left_unmapped }}</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+
+    <!-- ===================================================== -->
+    <!-- 4. MISSING VALUES -->
+    <!-- ===================================================== -->
+
+    <section>
+
+        <h2>4. Missing Values</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Missing Count</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for column, count in missing_metrics.count_per_column.items() %}
+
+                <tr>
+                    <td>{{ column }}</td>
+                    <td>{{ count }}</td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        <h3>Missing Value Summary</h3>
+
+        <table>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Numeric values filled</td>
+                    <td>{{ missing_metrics.numeric_count }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Text values filled</td>
+                    <td>{{ missing_metrics.non_numeric_count }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Total missing values</td>
+                    <td>{{ missing_metrics.total }}</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+
+    <!-- ===================================================== -->
+    <!-- 5. DUPLICATES -->
+    <!-- ===================================================== -->
+
+    <section>
+
+        <h2>5. Duplicates</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Duplicates found</td>
+
+                    <td>
+                        {{ duplicate_metrics.duplicates_found }}
+                        ({{ duplicate_metrics.duplicates_percentage }}%)
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Rows before</td>
+                    <td>{{ duplicate_metrics.rows_before }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Rows removed</td>
+
+                    <td>
+                        {{ duplicate_metrics.rows_before -
+                           duplicate_metrics.rows_after }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Rows after</td>
+                    <td>{{ duplicate_metrics.rows_after }}</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+
+    <!-- ===================================================== -->
+    <!-- 6. ANOMALIES -->
+    <!-- ===================================================== -->
+
+    <section>
+
+        <h2>6. Anomalies</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Contamination used</td>
+                    <td>{{ anomaly_metrics.contamination }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Anomalies flagged</td>
+
+                    <td>
+                        {{ anomaly_metrics.anomalies_found }}
+                        ({{ anomaly_metrics.anomaly_percentage }}%)
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+
+        <h3>Columns Used for Detection</h3>
+
+        <ul>
+
+            {% for column in anomaly_metrics.numeric_columns_used %}
+
+                <li>{{ column }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </section>
+
+
+    <!-- ===================================================== -->
+    <!-- 7. SEMANTIC MAPPING -->
+    <!-- ===================================================== -->
+
+    <section>
+
+        <h2 class="headline">
+            7. Semantic Mapping
+        </h2>
+
+        <p>
+            Semantic matching results for each processed column.
+        </p>
+
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Raw</th>
+                    <th>Matched To</th>
+                    <th>Confidence</th>
+                    <th>Status</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for item in mapping_rows %}
+
+                <tr>
+
+
+                    <!-- Raw column -->
+
+                    <td>
+                        {{ item["raw column"] }}
+                    </td>
+
+
+                    <!-- Matched column -->
+
+                    <td>
+                        {{ item["matched_to"] }}
+                    </td>
+
+
+                    <!-- Confidence -->
+
+                    <td>
+
+                        {% if item["confidence"] >= 0.85 %}
+
+                            <span class="badge green">
+                                {{ "%.2f"|format(item["confidence"]) }}
+                            </span>
+
+                        {% elif item["confidence"] >= 0.75 %}
+
+                            <span class="badge yellow">
+                                {{ "%.2f"|format(item["confidence"]) }}
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge red">
+                                {{ "%.2f"|format(item["confidence"]) }}
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- Status -->
+
+                    <td>
+
+                        {% if item["final_status"] == "low_confidence" %}
+
+                            <span class="warning">
+                                ⚠️ Low confidence — see review file
+                            </span>
+
+                        {% elif item["final_status"] == "already_correct" %}
+
+                            <span class="success">
+                                ✅ Already correct
+                            </span>
+
+                        {% elif item["final_status"] == "renamed" %}
+
+                            <span class="success">
+                                ✅ Renamed
+                            </span>
+
+                        {% elif item["final_status"] == "skipped_collision" %}
+
+                            <span class="warning">
+                                ⏭️ Skipped (name already taken)
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        <!-- ================================================= -->
+        <!-- Semantic Mapping Summary -->
+        <!-- ================================================= -->
+
+        <h3>Semantic Mapping Summary</h3>
+
+
+        <div class="summary">
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Total columns
+                </div>
+
+                <div class="summary-value">
+                    {{ match_metrics.total_columns }}
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Mapped confidently
+                </div>
+
+                <div class="summary-value">
+                    {{ match_metrics.columns_mapped_confident }}
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Low confidence
+                </div>
+
+                <div class="summary-value">
+                    {{ match_metrics.columns_low_confidence }}
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Renames applied
+                </div>
+
+                <div class="summary-value">
+                    {{ rename_metrics.renames_applied }}
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Already correct
+                </div>
+
+                <div class="summary-value">
+                    {{ rename_metrics.already_correct }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <table>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Skipped collisions</td>
+                    <td>{{ rename_metrics.renames_skipped_collision }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Left unmapped</td>
+                    <td>{{ rename_metrics.columns_left_unmapped }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Average confidence</td>
+
+                    <td>
+                        {{ "%.2f"|format(match_metrics.average_confidence) }}
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+
+        <!-- ================================================= -->
+        <!-- Review File -->
+        <!-- ================================================= -->
+
+        {% if review_metrics.review_file_written %}
+
+        <div class="review-box">
+
+            <strong>⚠️ Review required</strong>
+
+            <p>
+                A review file was generated for columns requiring
+                manual inspection.
+            </p>
+
+            <p>
+
+                <strong>Review file:</strong>
+
+                <a
+                    href="{{ review_metrics.review_file_path }}"
+                    target="_blank"
+                >
+                    {{ review_metrics.review_file_path }}
+                </a>
+
+            </p>
+
+            <p>
+
+                <strong>Columns:</strong>
+
+                {% for column in review_metrics.review_columns %}
+
+                    {{ column }}{% if not loop.last %}, {% endif %}
+
+                {% endfor %}
+
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- ===================================================== -->
+    <!-- OUTPUT FILE -->
+    <!-- ===================================================== -->
+
+    <section>
+
+
+        <h2>Output</h2>
+
+        <table>
+
+            <tbody>
+
+                <tr>
+                    <td class="metric">Cleaned file written</td>
+                    <td>{{ cleaned_metrics.cleaned_file_written }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Output file</td>
+
+                    <td>
+                        {{ cleaned_metrics.cleaned_file_path }}
+
+                        {% if cleaned_metrics.cleaned_file_written %}
+                            <br>
+                            <a href="{{ cleaned_metrics.cleaned_file_path }}" download>
+                                ⬇️ Download cleaned CSV
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Rows written</td>
+                    <td>{{ cleaned_metrics.rows_written }}</td>
+                </tr>
+
+                <tr>
+                    <td class="metric">Columns written</td>
+                    <td>{{ cleaned_metrics.columns_written }}</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+    </section>
+
+
+
+</div>
+
+</body>
+
+</html>
+

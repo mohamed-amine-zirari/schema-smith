@@ -228,3 +228,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Generated SchemaSmith outputs
+report/
+report.html
+review/
+finale_resulte/
