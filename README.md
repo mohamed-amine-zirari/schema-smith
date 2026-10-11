@@ -11,6 +11,50 @@ It combines traditional data-cleaning techniques with semantic column matching u
 - Evaluating matching performance
 - Refining the data-quality reporting
 - Improving test coverage
+
+  ## Evaluation Results
+
+SchemaSmith's semantic column matcher was evaluated on a test set of 100 column names. The test set covers six types of input: exact matches, casing and spacing variations, abbreviations, noisy names, typos, and synonyms.
+
+The matcher uses the `all-MiniLM-L6-v2` Sentence Transformer model to generate embeddings and cosine similarity to rank canonical column names. Predictions with a confidence score below the configured threshold of `0.75` are flagged for review.
+
+### Overall Results
+
+| Metric             |       Result |
+| ------------------ | -----------: |
+| Test cases         |          100 |
+| Top-1 accuracy     | 90% (90/100) |
+| Top-3 accuracy     | 96% (96/100) |
+| Silent errors      |       0 (0%) |
+| Flagged for review |     10 (10%) |
+
+**Top-1 accuracy** measures how often the first prediction is correct. **Top-3 accuracy** measures how often the correct canonical name appears among the three highest-ranked predictions.
+
+### Results by Category
+
+| Category           | Correct | Accuracy |
+| ------------------ | ------: | -------: |
+| Exact              |   10/10 |     100% |
+| Casing and spacing |   15/15 |     100% |
+| Abbreviation       |   19/20 |      95% |
+| Noise              |   19/20 |      95% |
+| Synonym            |   19/20 |      95% |
+| Typo               |    8/15 |    53.3% |
+
+### Improvement in Noise Handling
+
+Noise-category accuracy improved from **75% (15/20) to 95% (19/20)** during development. This represents four additional correct predictions in the 20 noise test cases.
+
+The remaining error in this category is `S@lary`, which is incorrectly matched to `department` instead of `salary`. This indicates that handling special characters and noisy column names still needs further refinement.
+
+### Error Handling
+
+In the latest evaluation, all 10 incorrect Top-1 predictions were flagged for review because their similarity scores were below the `0.75` threshold. No incorrect Top-1 predictions exceeded the threshold in this test run.
+
+### Limitations
+
+These results apply to the current 100-case test set and do not guarantee the same performance on unseen datasets. Typo handling remains the main weakness, with an accuracy of 53.3%. Further evaluation should focus on spelling variations, ambiguous abbreviations, and noisy inputs.
+
   
 
 ## Problem
