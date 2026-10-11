@@ -340,8 +340,8 @@ def main():
         return (model ,canonical_column_names ,canonical_embeddings)
     model_emb ,canonical_column_names_,canonical_embeddings_ = build_embeddings(canonical_column_names =canonical_column_names_ ,messy_columns_ = messy_columns )
 
-    def preprocess_messy_column__name(name) :
-        ABBREVIATIONS = {
+    def preprocess_messy_column__name(name) : 
+        ABBREVIATIONS = {    
                             "nm": "name",
                             "dt": "date",
                             "id": "identifier",
@@ -361,23 +361,24 @@ def main():
                         }
         v1 = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
         v2 = v1.replace("_"," ").replace("-"," ")
-        v3 = re.sub(r"\s+", " ", v2).lower()
+        v3 = re.sub(r"[^a-zA-Z0-9 ]", "", v2)
+        v4 = re.sub(r"\s+", " ", v3).lower()
 
-        if " " in v3 :
-            splited_v3 = v3.split()
+        if " " in v4 :
+            splited_v4 = v4.split()
 
             for ab in ABBREVIATIONS :
-                for index , item in enumerate(splited_v3) :
+                for index , item in enumerate(splited_v4) :
                     if ab == item :
-                        splited_v3[index] = ABBREVIATIONS[ab]
+                        splited_v4[index] = ABBREVIATIONS[ab] 
 
-            v3 = " ".join(splited_v3)
+            v4 = " ".join(splited_v4)
         else :
             for ab in ABBREVIATIONS :
-                if ab == v3 :
-                    v3 = ABBREVIATIONS[ab]
-        # print(v3)
-        return v3
+                if ab == v4 :
+                    v4 = ABBREVIATIONS[ab] 
+        # print(v4)          
+        return v4
 
     THRESHOLD=float(args.threshold)
     def match_columns(df ,model, canonical_names , canonical_embd , threshold):
